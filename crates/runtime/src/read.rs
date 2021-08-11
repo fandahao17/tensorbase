@@ -1,7 +1,7 @@
 use crate::{
-    ch::blocks::Block,
     errs::{BaseRtError, BaseRtResult},
     mgmt::BMS,
+    types::BaseDataBlock,
 };
 use client::prelude::{errors::Error as ClientError, PoolBuilder};
 use engine::remote;
@@ -16,7 +16,7 @@ pub fn query(
     query_id: &str,
     current_db: &str,
     p: Pair<Rule>,
-) -> BaseRtResult<Vec<Block>> {
+) -> BaseRtResult<Vec<BaseDataBlock>> {
     let timer = Instant::now();
     let query_id = query_id.replace("-", "_");
     let raw_query = p.as_str().to_string();
@@ -39,7 +39,7 @@ pub fn query(
 
     let mut blks = Vec::with_capacity(res.len());
     for rb in res {
-        let blk = Block::try_from(rb)?;
+        let blk = BaseDataBlock::try_from(rb)?;
         log::debug!("blk: {:?}", blk);
         blks.push(blk);
     }
@@ -105,7 +105,7 @@ fn update_remote_db_pools(remote_tb_info: &RemoteTableInfo) -> BaseRtResult<()> 
 pub fn remote_query(
     remote_tb_info: RemoteTableInfo,
     raw_query: &str,
-) -> BaseRtResult<Vec<Block>> {
+) -> BaseRtResult<Vec<BaseDataBlock>> {
     let ps = &BMS.remote_db_pool;
     update_remote_db_pools(&remote_tb_info)?;
     let sql = remote_tb_info

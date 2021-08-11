@@ -1,8 +1,8 @@
-use base::codec::encode_varint64;
 use bytes::{Buf, BufMut, BytesMut};
 
 use crate::ch::protocol::ServerCodes;
 use crate::errs::{BaseRtError, BaseRtResult};
+use crate::types::BaseWriteAware;
 use std::{intrinsics::copy_nonoverlapping, slice};
 
 pub trait BytesEncoder {
@@ -74,9 +74,9 @@ impl BytesExt for BytesMut {
 }
 
 pub trait CHMsgWriteAware {
-    fn write_varint(&mut self, value: u64);
+    // fn write_varint(&mut self, value: u64);
     // fn write_fixint<T: PrimInt>(&mut self, value: T);
-    fn write_varbytes(&mut self, value: &[u8]);
+    // fn write_varbytes(&mut self, value: &[u8]);
     fn write_str(&mut self, value: &str); //FIXME return BaseRtResult for write?
     fn write_as_exception(&mut self, err: BaseRtError);
     fn write_empty_block(&mut self);
@@ -95,29 +95,6 @@ pub trait CHMsgReadAware {
 }
 
 impl CHMsgWriteAware for BytesMut {
-    #[inline(always)]
-    fn write_varint(&mut self, value: u64) {
-        self.reserve(10); //FIXME
-        let buf =
-            unsafe { slice::from_raw_parts_mut(self.as_mut_ptr().add(self.len()), 10) };
-        let vi_len = encode_varint64(value, buf);
-        unsafe {
-            self.advance_mut(vi_len);
-        }
-    }
-
-    #[inline(always)]
-    fn write_varbytes(&mut self, value: &[u8]) {
-        let len = value.len();
-        self.reserve(10 + len); //FIXME
-        self.write_varint(len as u64);
-        // value.as_bytes().copy_to_slice()
-        unsafe {
-            copy_nonoverlapping(value.as_ptr(), self.as_mut_ptr().add(self.len()), len);
-            self.advance_mut(len);
-        }
-    }
-
     #[inline(always)]
     fn write_str(&mut self, value: &str) {
         self.write_varbytes(value.as_bytes());
